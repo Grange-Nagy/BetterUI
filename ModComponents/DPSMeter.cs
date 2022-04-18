@@ -17,6 +17,58 @@ namespace BetterUI
     static class DPSMeter
     {
 
+        public class playerLog
+        {
+            public string className;
+            public float stagePlayerDamage;
+            public float stageMinionDamage;
+            public float rollingPlayerDamage;
+            public float rollingMinionDamage;
+            public Queue<DamageLog> playerDamageLog;
+            public Queue<DamageLog> minionDamageLog;
+
+            public float playerDPS {get => playerDamageLog.Count > 0 ? rollingPlayerDamage / Clamp(Time.time - playerDamageLog.Peek().time) : 0; }
+            public float minionDPS {get => minionDamageLog.Count > 0 ? rollingMinionDamage / Clamp(Time.time - minionDamageLog.Peek().time) : 0; }
+
+            public playerLog(string cn, Queue<DamageLog> pdl, Queue<DamageLog> mdl)
+            {
+                className = cn;
+                stagePlayerDamage = 0;
+                stageMinionDamage = 0;
+                rollingPlayerDamage = 0;
+                rollingMinionDamage = 0;
+                playerDamageLog = pdl;
+                minionDamageLog = mdl;
+            }
+
+            public void updatePlayerDamages(float damage)
+            {
+                stagePlayerDamage += damage;
+                rollingPlayerDamage += damage;
+            }
+
+            public void updateMinionDamages(float damage)
+            {
+                stageMinionDamage += damage;
+                rollingMinionDamage += damage;
+            }
+
+            public void updateRollingDamage()
+            {
+                while(playerDamageLog.Count > 0 && playerDamageLog.Peek().time < Time.time - 10f)
+                {
+                    rollingPlayerDamage -= playerDamageLog.Dequeue().damage;
+                }
+                 while (minionDamageLog.Count > 0 && minionDamageLog.Peek().time < Time.time - 10f)
+                {
+                   rollingMinionDamage -= minionDamageLog.Dequeue().damage;
+                }
+            }
+        }
+
+        private static Dictionary<string, playerLog> userLogs;
+
+
         private static readonly Queue<DamageLog> characterDamageLog = new Queue<DamageLog>();
         private static float characterDamageSum = 0;
         private static readonly Queue<DamageLog> minionDamageLog = new Queue<DamageLog>();
@@ -29,6 +81,9 @@ namespace BetterUI
         public static float DPS { get => MinionDPS + CharacterDPS; }
         public static float CharacterDPS { get => characterDamageLog.Count > 0 ? characterDamageSum / Clamp(Time.time - characterDamageLog.Peek().time) : 0; }
         public static float MinionDPS { get => minionDamageLog.Count > 0 ? minionDamageSum / Clamp(Time.time - minionDamageLog.Peek().time) : 0; }
+
+        private static int mode = 0;
+
         internal struct DamageLog
         {
             public float damage;
@@ -42,10 +97,13 @@ namespace BetterUI
 
         internal static void Initialize()
         {
+              
             BetterUIPlugin.Hooks.Add<GlobalEventManager, DamageDealtMessage>("ClientDamageNotified", DamageDealtMessage_ClientDamageNotified);
 
             BetterUIPlugin.onEnable += () => BetterUIPlugin.onUpdate += onUpdate;
             BetterUIPlugin.onDisable += () => BetterUIPlugin.onUpdate -= onUpdate;
+      
+           
 
             if (ConfigManager.DPSMeterWindowShow.Value)
             {
@@ -61,25 +119,119 @@ namespace BetterUI
             return Math.Min(Math.Max(1, value), ConfigManager.DPSMeterTimespan.Value);
         }
 
-   
         private static void onUpdate()
         {
-            while(characterDamageLog.Count > 0 && characterDamageLog.Peek().time < Time.time - ConfigManager.DPSMeterTimespan.Value)
-            {
-                characterDamageSum -= characterDamageLog.Dequeue().damage;
-            }
-            while (minionDamageLog.Count > 0 && minionDamageLog.Peek().time < Time.time - ConfigManager.DPSMeterTimespan.Value)
-            {
-                minionDamageSum -= minionDamageLog.Dequeue().damage;
-            }
-            if (textMesh != null)
-            {
-                BetterUIPlugin.sharedStringBuilder.Clear();
-                BetterUIPlugin.sharedStringBuilder.Append("DPS: ");
-                BetterUIPlugin.sharedStringBuilder.Append((ConfigManager.DPSMeterWindowIncludeMinions.Value ? DPS : CharacterDPS).ToString("N0"));
 
+            if (Input.GetKeyUp(KeyCode.F2))
+            {
+                if (mode == 0){mode = 1;}
+                else if (mode == 1) {mode = 2;}
+                else if (mode == 2) {mode = 3;}
+                else if (mode == 3) {mode = 4;}
+                else if (mode == 4) {mode = 0;}
+            }
+            if (userLogs != null)
+            {
+                           
+                
+                var tupleList = new List<(float, string)>{};
+                var total = 1f;
+
+                foreach(KeyValuePair <string, playerLog> kvp in userLogs)
+                {
+                    
+
+                    var userName = kvp.Key;
+                    var log = kvp.Value;
+
+                    log.updateRollingDamage();
+
+                    total += log.stagePlayerDamage + log.stageMinionDamage;
+                    if (textMesh != null)
+                    {
+
+                        string s = userName;
+                        float f = 0;
+                        if (mode == 0)
+                        {
+                            s += ": ";
+                            f = log.playerDPS + log.minionDPS;
+                        }
+                        if (mode == 1)
+                        {
+                            s += ": ";
+                            f = log.stagePlayerDamage + log.stageMinionDamage;
+                            
+                        }
+                        if (mode == 2)
+                        {
+                            s += ": ";
+                            f = log.stagePlayerDamage + log.stageMinionDamage;
+                        }   
+                        if (mode == 3)
+                        {
+                            s += "'s minions: ";
+                            f = log.minionDPS;
+                        }    
+                        if (mode == 4)
+                        {
+                            
+                            f = log.stageMinionDamage;
+                            
+                        }   
+                        
+                        tupleList.Add((f, s));
+                        
+                        
+                    }
+                }
+
+                tupleList.Sort((x,y) => y.Item1.CompareTo(x.Item1));
+                BetterUIPlugin.sharedStringBuilder.Clear();
+
+                bool isFirst = true;
+                foreach ((float val, string part) in tupleList)
+                {
+                    if (!isFirst){BetterUIPlugin.sharedStringBuilder.Append("\n");}
+                    isFirst = false;
+                    
+                    BetterUIPlugin.sharedStringBuilder.Append(part);
+                    
+
+                    if (mode == 0)
+                    {
+
+                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+
+                    }
+                    if (mode == 1)
+                    {
+
+                        BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
+                        BetterUIPlugin.sharedStringBuilder.Append(" %");
+
+                    }
+                    if (mode == 2)
+                    {
+                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+
+                    }
+                    if (mode == 3)
+                    {
+                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+
+                    }
+                    if (mode == 4)
+                    {
+                        BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
+
+                    }
+                }
+                
                 textMesh.SetText(BetterUIPlugin.sharedStringBuilder);
             }
+
+
             if (chatBox != null && DPSMeterPanel != null) DPSMeterPanel.gameObject.SetActive(!chatBox.showInput);
         }
 
@@ -90,29 +242,58 @@ namespace BetterUI
         }
         public static void DamageDealtMessage_ClientDamageNotified(Action<DamageDealtMessage> orig, DamageDealtMessage dmgMsg)
         {
+            
             orig(dmgMsg);
 
             CharacterMaster localMaster = LocalUserManager.GetFirstLocalUser().cachedMasterController.master;
+
+            
+            
 
             if (dmgMsg.attacker && dmgMsg.victim) 
             {
                 var victimBody = dmgMsg.victim.gameObject.GetComponent<CharacterBody>();
                 if (victimBody && victimBody.teamComponent.teamIndex != TeamIndex.Player)
                 {
-                    if (dmgMsg.attacker == localMaster.GetBodyObject())
+
+                    foreach (PlayerCharacterMasterController playerCharacterMaster in PlayerCharacterMasterController.instances)
                     {
-                        characterDamageSum += dmgMsg.damage;
-                        characterDamageLog.Enqueue(new DamageLog(dmgMsg.damage));
-                    }
-                    else
-                    {
-                        var attackerBody = dmgMsg.attacker.GetComponent<CharacterBody>();
-                        if (attackerBody && attackerBody.master && attackerBody.master.minionOwnership && attackerBody.master.minionOwnership.ownerMasterId == localMaster.netId)
+                        //You can get the master via playerCharacterMaster.master
+                        //and the body via playerCharacterMaster.master.GetBody()
+                        if (dmgMsg.attacker == playerCharacterMaster.master.GetBodyObject()){
+
+                            var userName = playerCharacterMaster.GetDisplayName();                                    //gets user name
+                            playerLog log;
+                          
+                            if (userLogs.TryGetValue(userName, out log))
+                            {
+                                log.updatePlayerDamages(dmgMsg.damage);
+                                log.playerDamageLog.Enqueue(new DamageLog(dmgMsg.damage));
+
+                            }
+
+
+                        }
+                        else
                         {
-                            minionDamageSum += dmgMsg.damage;
-                            minionDamageLog.Enqueue(new DamageLog(dmgMsg.damage));
+                            var attackerBody = dmgMsg.attacker.GetComponent<CharacterBody>();
+                            if (attackerBody && attackerBody.master && attackerBody.master.minionOwnership && attackerBody.master.minionOwnership.ownerMasterId == playerCharacterMaster.master.netId)
+                            {
+                                var userName = playerCharacterMaster.GetDisplayName();                                    //gets user name
+                                playerLog log;
+            
+                                if (userLogs.TryGetValue(userName, out log))
+                                {
+                                    log.updateMinionDamages(dmgMsg.damage);
+                                    log.minionDamageLog.Enqueue(new DamageLog(dmgMsg.damage));
+                                }
+
+
+                            }
                         }
                     }
+
+
                 }
             }
         }
@@ -121,6 +302,28 @@ namespace BetterUI
 
         private static void onHUDAwake(HUD self)
         {
+            int playerCount = 0;
+            userLogs = new Dictionary<string, playerLog>();
+            foreach (PlayerCharacterMasterController playerCharacterMaster in PlayerCharacterMasterController.instances)
+            {
+
+                //var className = playerCharacterMaster.master.GetBodyObject().gameObject.GetComponent<CharacterBody>().GetDisplayName();
+                var className = "";
+
+                var classLog = new Queue<DamageLog>();
+                var minionLog = new Queue<DamageLog>();
+
+
+
+                var logEntry = new playerLog(className,classLog, minionLog);
+
+                
+                userLogs.Add(playerCharacterMaster.GetDisplayName(),logEntry);
+
+                playerCount += 1;
+
+            }
+
             if (DPSMeterPanel == null)
             {
 
@@ -136,16 +339,19 @@ namespace BetterUI
                 RectTransform rectTransform2 = DPSMeterText.AddComponent<RectTransform>();
                 textMesh = DPSMeterText.AddComponent<HGTextMeshProUGUI>();
 
-                DPSMeterText.transform.SetParent(DPSMeterPanel.transform);
 
+                DPSMeterText.transform.SetParent(DPSMeterPanel.transform);
+                float scaling = (ConfigManager.DPSMeterWindowSize.Value.y * (playerCount - 1));
+                Vector2 newSize = new Vector2(ConfigManager.DPSMeterWindowSize.Value.x,ConfigManager.DPSMeterWindowSize.Value.y * playerCount);
+                Vector2 newPos = new Vector2(ConfigManager.DPSMeterWindowPosition.Value.x * 12,ConfigManager.DPSMeterWindowPosition.Value.y + scaling);
 
                 rectTransform.localPosition = Vector3.zero;
                 rectTransform.anchorMin = ConfigManager.DPSMeterWindowAnchorMin.Value;
                 rectTransform.anchorMax = ConfigManager.DPSMeterWindowAnchorMax.Value;
                 rectTransform.localScale = Vector3.one;
                 rectTransform.pivot = ConfigManager.DPSMeterWindowPivot.Value;
-                rectTransform.sizeDelta = ConfigManager.DPSMeterWindowSize.Value;
-                rectTransform.anchoredPosition = ConfigManager.DPSMeterWindowPosition.Value;
+                rectTransform.sizeDelta = newSize;
+                rectTransform.anchoredPosition = newPos;
                 rectTransform.eulerAngles = ConfigManager.DPSMeterWindowAngle.Value;
 
 
@@ -165,6 +371,7 @@ namespace BetterUI
                     image.sprite = copyImage.sprite;
                     image.color = copyImage.color;
                     image.type = Image.Type.Sliced;
+
                 }
 
                 textMesh.enableAutoSizing = true;
@@ -172,6 +379,8 @@ namespace BetterUI
                 textMesh.faceColor = Color.white;
                 textMesh.alignment = TMPro.TextAlignmentOptions.MidlineLeft;
             }
+
+
         }
     }
 }
