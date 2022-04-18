@@ -175,7 +175,7 @@ namespace BetterUI
                         }    
                         if (mode == 4)
                         {
-                            
+                            s += "'s minions: ";
                             f = log.stageMinionDamage;
                             
                         }   
@@ -224,6 +224,7 @@ namespace BetterUI
                     if (mode == 4)
                     {
                         BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
+                        BetterUIPlugin.sharedStringBuilder.Append(" %");
 
                     }
                 }
@@ -344,6 +345,7 @@ namespace BetterUI
                 float scaling = (ConfigManager.DPSMeterWindowSize.Value.y * (playerCount - 1));
                 Vector2 newSize = new Vector2(ConfigManager.DPSMeterWindowSize.Value.x,ConfigManager.DPSMeterWindowSize.Value.y * playerCount);
                 Vector2 newPos = new Vector2(ConfigManager.DPSMeterWindowPosition.Value.x * 12,ConfigManager.DPSMeterWindowPosition.Value.y + scaling);
+                Vector3 newEulerAngle = new Vector3( ConfigManager.DPSMeterWindowAngle.Value.x,  -ConfigManager.DPSMeterWindowAngle.Value.y, ConfigManager.DPSMeterWindowAngle.Value.z);
 
                 rectTransform.localPosition = Vector3.zero;
                 rectTransform.anchorMin = ConfigManager.DPSMeterWindowAnchorMin.Value;
@@ -352,7 +354,7 @@ namespace BetterUI
                 rectTransform.pivot = ConfigManager.DPSMeterWindowPivot.Value;
                 rectTransform.sizeDelta = newSize;
                 rectTransform.anchoredPosition = newPos;
-                rectTransform.eulerAngles = ConfigManager.DPSMeterWindowAngle.Value;
+                rectTransform.eulerAngles = newEulerAngle;
 
 
                 DPSMeterPanel.transform.SetParent(BetterUIPlugin.hud.mainUIPanel.transform);
