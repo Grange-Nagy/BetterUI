@@ -10,15 +10,38 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BepInEx.Core" Version="5.4.9" />
-    <PackageReference Include="BetterUnityPlugin" Version="1.0.0" />
-    <PackageReference Include="ItemStatsMod" Version="2.2.2" />
+    <Compile Remove="Unity\**" />
+    <EmbeddedResource Remove="Unity\**" />
+    <None Remove="Unity\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Unity\AssetBundles\StandaloneWindows\betteruiassets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.19" />
+    <PackageReference Include="BetterUnityPlugin" Version="1.1.1" />
     <PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.3.1-r.0" />
-    <PackageReference Include="RoR2-BetterAPI" Version="2.0.2" />
 	<PackageReference Include="UnityEngine.Modules" Version="2019.4.26" />
+    <PackageReference Include="RoR2-BetterAPI" Version="4.0.2" />
 	<PackageReference Include="KinematicCharacterController" Version="1.0.0" />
     <PackageReference Include="Facepunch.Steamworks" Version="0.7.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.0" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
