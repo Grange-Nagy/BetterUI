@@ -148,34 +148,34 @@ namespace BetterUI
 
                         string s = userName;
                         float f = 0;
-                        if (mode == 0)
+                        switch(mode)
                         {
-                            s += ": ";
-                            f = log.playerDPS + log.minionDPS;
+                            case 0:
+                                s += ": ";
+                                f = log.playerDPS + log.minionDPS;
+                                break;
+                            case 1:
+                                s += ": ";
+                                f = log.stagePlayerDamage + log.stageMinionDamage;
+                                break;
+                            case 2:
+                                s += ": ";
+                                f = log.stagePlayerDamage + log.stageMinionDamage;
+                                break;
+                            case 3:
+                                s += "'s minions: ";
+                                f = log.minionDPS;
+                                break;
+                            case 4:
+                                s += "'s minions: ";
+                                f = log.stageMinionDamage;
+                                break;
+                            default:
+                                s += ": ";
+                                f = log.playerDPS;
+                                break;
                         }
-                        if (mode == 1)
-                        {
-                            s += ": ";
-                            f = log.stagePlayerDamage + log.stageMinionDamage;
-                            
-                        }
-                        if (mode == 2)
-                        {
-                            s += ": ";
-                            f = log.stagePlayerDamage + log.stageMinionDamage;
-                        }   
-                        if (mode == 3)
-                        {
-                            s += "'s minions: ";
-                            f = log.minionDPS;
-                        }    
-                        if (mode == 4)
-                        {
-                            s += "'s minions: ";
-                            f = log.stageMinionDamage;
-                            
-                        }   
-                        
+
                         tupleList.Add((f, s));
                         
                         
@@ -193,36 +193,21 @@ namespace BetterUI
                     
                     BetterUIPlugin.sharedStringBuilder.Append(part);
                     
-
-                    if (mode == 0)
+                    switch(mode)
                     {
-
-                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+                        case 0:
+                            BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+                            break;
+                        case 1: case 4:
+                            BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
+                            BetterUIPlugin.sharedStringBuilder.Append(" %");
+                            break;
+                        case 2: case 3:
+                            BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
+                            break;
 
                     }
-                    if (mode == 1)
-                    {
 
-                        BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
-                        BetterUIPlugin.sharedStringBuilder.Append(" %");
-
-                    }
-                    if (mode == 2)
-                    {
-                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
-
-                    }
-                    if (mode == 3)
-                    {
-                        BetterUIPlugin.sharedStringBuilder.Append(val.ToString("N0"));
-
-                    }
-                    if (mode == 4)
-                    {
-                        BetterUIPlugin.sharedStringBuilder.Append(((val / total)*100).ToString("N0"));
-                        BetterUIPlugin.sharedStringBuilder.Append(" %");
-
-                    }
                 }
                 
                 textMesh.SetText(BetterUIPlugin.sharedStringBuilder);
@@ -255,8 +240,6 @@ namespace BetterUI
 
                     foreach (PlayerCharacterMasterController playerCharacterMaster in PlayerCharacterMasterController.instances)
                     {
-                        //You can get the master via playerCharacterMaster.master
-                        //and the body via playerCharacterMaster.master.GetBody()
                         if (dmgMsg.attacker == playerCharacterMaster.master.GetBodyObject()){
 
                             var userName = playerCharacterMaster.GetDisplayName();                                    //gets user name
@@ -268,8 +251,6 @@ namespace BetterUI
                                 log.playerDamageLog.Enqueue(new DamageLog(dmgMsg.damage));
 
                             }
-
-
                         }
                         else
                         {
@@ -289,8 +270,6 @@ namespace BetterUI
                             }
                         }
                     }
-
-
                 }
             }
         }
