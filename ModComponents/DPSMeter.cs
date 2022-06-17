@@ -124,11 +124,7 @@ namespace BetterUI
 
             if (Input.GetKeyUp(KeyCode.F2))
             {
-                if (mode == 0){mode = 1;}
-                else if (mode == 1) {mode = 2;}
-                else if (mode == 2) {mode = 3;}
-                else if (mode == 3) {mode = 4;}
-                else if (mode == 4) {mode = 0;}
+                mode = (mode + 1) % 5;
             }
             if (userLogs != null)
             {
