@@ -17,10 +17,6 @@ namespace BetterUI
         public static void Initialize()
         {
 
-
-
-
-
             RegisterStat(RoR2Content.Items.AlienHead, "Cooldown Reduction", 0.25f, NegativeExponentialStacking, StatFormatter.Percent, itemTag:ItemTag.SkillCooldown);
             RegisterModifier(ItemTag.SkillCooldown, RoR2Content.Items.AlienHead, ItemModifier.ExponentialBonus, 0.25f);
             RegisterStat(RoR2Content.Items.ArmorPlate, "Armor", 5f, LinearStacking, StatFormatter.Armor);
@@ -221,26 +217,25 @@ namespace BetterUI
 
             RegisterModifier(ItemTag.Luck, "Luck", ItemModifier.LuckBonus, ItemModifier.LuckLocator, ItemModifier.LuckChecker, ItemModifier.LuckCounter, "Luck");
             RegisterModifier(ItemTag.Allies, "Ally", ItemModifier.AlliesBonus, ItemModifier.AlliesLocator, ItemModifier.AlliesChecker, ItemModifier.AlliesCounter, "Allies");
-
-
-            BetterUIPlugin.Hooks.Add<EntityStates.GhostUtilitySkillState>(nameof(EntityStates.GhostUtilitySkillState.FixedUpdate), GhostUtilitySkillState_FixedUpdate);
         }
 
-
-        static int i = 0;
-        static float j = 0;
-
-        static void GhostUtilitySkillState_FixedUpdate(Action<EntityStates.GhostUtilitySkillState> orig, EntityStates.GhostUtilitySkillState self)
+        public static List<ItemStat> GetItemStats(ItemDef itemDef)
         {
-            if (self.healTimer - UnityEngine.Time.fixedDeltaTime <= 0f)
-            {
-                i++;
-                j += EntityStates.GhostUtilitySkillState.healFractionPerTick ;
-                UnityEngine.Debug.Log(i + " Healing " + EntityStates.GhostUtilitySkillState.healFractionPerTick + " = " + j);
-            }
-            orig(self);
+            if (itemStats.TryGetValue(itemDef, out var stats)) return stats;
+            return null;
         }
 
+        public static List<ItemTag> GetItemTags(ItemStat itemStat)
+        {
+            if (itemTags.TryGetValue(itemStat, out var tags)) return tags;
+            return null;
+        }
+
+        public static List<ItemModifier> GetItemModifers(ItemTag itemTag)
+        {
+            if (itemModifiers.TryGetValue(itemTag, out var modifiers)) return modifiers;
+            return null;
+        }
 
         public static ItemStat RegisterStat(ItemDef itemDef, string nameToken, float value, StackingFormula stackingFormula = null, StatFormatter statFormatter = null, ItemTag itemTag = null)
         {
